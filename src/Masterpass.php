@@ -1,6 +1,5 @@
 <?php
 
-
 namespace Mirazhhi\Masterpass;
 
 use GuzzleHttp\Client;
