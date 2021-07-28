@@ -1,7 +1,7 @@
 <?php
 
 
-namespace App\Masterpass\src;
+namespace Masterpass;
 
 use GuzzleHttp\Client;
 use App\Masterpass\src\Oauth;

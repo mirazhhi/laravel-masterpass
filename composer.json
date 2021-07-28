@@ -1,38 +1,14 @@
 {
     "name": "mirazhhi/masterpass",
-    "description": "Masterpass service of Mastercard",
-    "keywords": [
-        "laravel",
-        "masterpass"
-    ],
+    "description": "Masterpass of Mastercard",
+    "type": "library",
     "license": "MIT",
     "authors": [
         {
-            "name": "mirazhhi",
+            "name": "Mirazhhi",
             "email": "mirazhhi.1337@gmail.com"
         }
     ],
-    "require": {},
-    "require-dev": {},
-    "autoload": {
-        "psr-4": {
-            "Masterpass\\": "src/"
-        }
-    },
-    "autoload-dev": {
-        "psr-4": {
-            "Masterpass\\Tests\\": "tests/"
-        }
-    },
     "minimum-stability": "stable",
-    "extra": {
-        "laravel": {
-            "providers": [
-                "Masterpass\\MasterpassServiceProvider"
-            ],
-            "aliases": {
-                "Masterpass": "Masterpass\\Facades\\Masterpass"
-            }
-        }
-    }
+    "require": {}
 }
