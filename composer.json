@@ -1,0 +1,17 @@
+{
+    "name": "mirazhhi/masterpass",
+    "type": "library",
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Mirazhhi\\Masterpass\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Mirazhhi",
+            "email": "mirazhhi.1337@gmail.com"
+        }
+    ],
+    "require": {}
+}
