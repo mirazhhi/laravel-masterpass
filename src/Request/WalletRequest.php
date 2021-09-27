@@ -9,21 +9,30 @@ use Mirazhhi\Masterpass\Oauth;
 abstract class WalletRequest
 {
     /**
-     * @var string
+     * Request method
+     *
+     * @var $httpMethod string
      */
     protected $httpMethod = 'POST';
 
     /**
-     * @var
+     * Masterpass wallet endpoint URLs
+     *
+     * @var $url string
      */
     protected $url;
 
     /**
+     * Guzzle Http Client
+     *
      * @var $client Client
      */
     protected $client;
 
-
+    /**
+     *
+     * @var array $payload
+     */
     protected $payload;
 
     /**
@@ -47,12 +56,18 @@ abstract class WalletRequest
     protected $privateKey;
 
     /**
+     * @var array
+     */
+    protected $data = [];
+
+    /**
      * @param Client $client
      */
-    public function __construct(Client $client) {
+    public function __construct(Client $client, array $data = []) {
         $this->client       = $client;
         $this->certPassword = config('masterpass.certPassword');
         $this->consumerKey  = config('masterpass.consumerKey');
+        $this->data         = $data;
         $this->loadPrivateKey();
     }
 
@@ -82,7 +97,7 @@ abstract class WalletRequest
 
     abstract public function validate() : WalletRequest;
 
-    abstract public function prepareData(array $data);
+    abstract public function prepareData(array $data = []);
 
     public function execute()
     {
@@ -125,6 +140,10 @@ abstract class WalletRequest
      */
     public function request()
     {
+//        if ($this->body === 'json') {
+//            dd($this->getRequestURL(), $this->body, $this->contentType);
+//        }
+
         $res = $this->client->request(
             $this->getRequestMethod(),
             $this->getRequestURL(),
@@ -136,7 +155,6 @@ abstract class WalletRequest
                 'form_params' => $this->payload()
             ]
         );
-
 
         return json_decode($res->getBody()->getContents());
     }

@@ -5,12 +5,17 @@ namespace Mirazhhi\Masterpass;
 
 class Oauth
 {
-    const AUTHORIZATION_HEADER_NAME = 'Authorization';
+    const
+        AUTHORIZATION_HEADER_NAME = 'Authorization',
+        SIGNATURE_ALGO = 'RSA-SHA1',
+        OAUTH_VERSION = '1.0'
+    ;
 
     /**
      * Load a RSA signing key out of a PKCS#12 container.
      */
-    public static function loadSigningKey($pkcs12KeyFilePath, $signingKeyPassword) {
+    public static function loadSigningKey($pkcs12KeyFilePath, $signingKeyPassword)
+    {
         try {
             $keystore = file_get_contents($pkcs12KeyFilePath);
         } catch (\Exception $e) {
@@ -27,10 +32,12 @@ class Oauth
 
     /**
      * Creates a Mastercard API compliant OAuth Authorization header.
+     *
      * @return string
      * @throws \InvalidArgumentException
      */
-    public static function getAuthorizationHeader($uri, $method, $payload, $consumerKey, $signingKey) {
+    public static function getAuthorizationHeader($uri, $method, $payload, $consumerKey, $signingKey)
+    {
         if (empty($uri)) {
             throw new \InvalidArgumentException('URI must be set!');
         }
@@ -47,21 +54,19 @@ class Oauth
             throw new \InvalidArgumentException('Signing key must be set!');
         }
 
-        $queryParameters = self::extractQueryParams($uri);
-        $oauthParameters = [];
-        $oauthParameters['oauth_consumer_key'] = $consumerKey;
-        $oauthParameters['oauth_nonce'] = self::getNonce();
-        $oauthParameters['oauth_timestamp'] = self::getTimestamp();
-        $oauthParameters['oauth_signature_method'] = 'RSA-SHA1';
-        $oauthParameters['oauth_version'] = '1.0';
-        $oauthParameters['oauth_body_hash'] = self::getBodyHash($payload);
+        $queryParameters                           = self::extractQueryParams($uri);
+        $oauthParameters                           = [];
+        $oauthParameters['oauth_consumer_key']     = $consumerKey;
+        $oauthParameters['oauth_nonce']            = self::getNonce();
+        $oauthParameters['oauth_timestamp']        = self::getTimestamp();
+        $oauthParameters['oauth_signature_method'] = self::SIGNATURE_ALGO;
+        $oauthParameters['oauth_version']          = self::OAUTH_VERSION;
+        $oauthParameters['oauth_body_hash']        = self::getBodyHash($payload);
 
         // Compute the OAuth signature
-        $oauthParamString = self::getOAuthParamString($queryParameters, $oauthParameters);
-        $baseUri = self::getBaseUriString($uri);
-
-        $signatureBaseString = self::getSignatureBaseString($baseUri, $method, $oauthParamString);
-
+        $oauthParamString                   = self::getOAuthParamString($queryParameters, $oauthParameters);
+        $baseUri                            = self::getBaseUriString($uri);
+        $signatureBaseString                = self::getSignatureBaseString($baseUri, $method, $oauthParamString);
         $oauthParameters['oauth_signature'] = self::signSignatureBaseString($signatureBaseString, $signingKey);
 
 
@@ -69,17 +74,19 @@ class Oauth
         $result = '';
         foreach ($oauthParameters as $key => $value) {
             $result .= (strlen($result) == 0 ? 'OAuth ' : ',');
-            $result .=  $key . '="' . rawurlencode($value) . '"';
+            $result .= $key . '="' . rawurlencode($value) . '"';
         }
         return $result;
     }
 
     /**
      * Parse query parameters out of the URL. https://tools.ietf.org/html/rfc5849#section-3.4.1.3
+     *
      * @return array
      * @throws \InvalidArgumentException
      */
-    private static function extractQueryParams($uri) {
+    private static function extractQueryParams($uri)
+    {
         $uriParts = parse_url($uri);
         if (!$uriParts) {
             throw new \InvalidArgumentException('URI is not valid!');
@@ -93,20 +100,20 @@ class Oauth
             return array();
         }
 
-        $rawQueryString = $uriParts['query'];
+        $rawQueryString     = $uriParts['query'];
         $decodedQueryString = rawurldecode($rawQueryString);
-        $mustEncode = $decodedQueryString != $rawQueryString;
+        $mustEncode         = $decodedQueryString != $rawQueryString;
 
         $queryParameters = [];
-        $rawParams = explode('&', $rawQueryString);
+        $rawParams       = explode('&', $rawQueryString);
         foreach ($rawParams as $index => $pair) {
             if (empty($pair)) {
                 continue;
             }
-            $index = strpos($pair, '=');
-            $key = rawurldecode($index > 0 ? substr($pair, 0, $index) : $pair);
-            $value = ($index > 0 && strlen($pair) > $index + 1) ? rawurldecode(substr($pair, $index + 1)) : '';
-            $encodedKey =  $mustEncode ? rawurlencode($key) : $key;
+            $index        = strpos($pair, '=');
+            $key          = rawurldecode($index > 0 ? substr($pair, 0, $index) : $pair);
+            $value        = ($index > 0 && strlen($pair) > $index + 1) ? rawurldecode(substr($pair, $index + 1)) : '';
+            $encodedKey   = $mustEncode ? rawurlencode($key) : $key;
             $encodedValue = $mustEncode ? rawurlencode($value) : $value;
             if (!array_key_exists($encodedKey, $queryParameters)) {
                 $queryParameters[$encodedKey] = array();
@@ -120,9 +127,11 @@ class Oauth
     /**
      * Generates a hash based on request payload as per https://tools.ietf.org/id/draft-eaton-oauth-bodyhash-00.html.
      * "If the request does not have an entity body, the hash should be taken over the empty string".
+     *
      * @return string
      */
-    private static function getBodyHash($payload) {
+    private static function getBodyHash($payload)
+    {
         return urlencode(
             base64_encode(hash('sha1', http_build_query($payload), true))
         );
@@ -130,9 +139,11 @@ class Oauth
 
     /**
      * Lexicographically sort all parameters and concatenate them into a string as per https://tools.ietf.org/html/rfc5849#section-3.4.1.3.2.
+     *
      * @return string
      */
-    private static function getOAuthParamString($queryParameters, $oauthParameters) {
+    private static function getOAuthParamString($queryParameters, $oauthParameters)
+    {
         foreach ($oauthParameters as $key => $value) {
             $oauthParameters[$key] = array($value);
         }
@@ -145,7 +156,7 @@ class Oauth
             asort($values, SORT_NATURAL); // Keys with same name are sorted by their values
             foreach ($values as $value) {
                 $parameterString .= (strlen($parameterString) == 0 ? '' : '&');
-                $parameterString .=  $key . '=' . $value;
+                $parameterString .= $key . '=' . $value;
             }
         }
         return $parameterString;
@@ -153,10 +164,12 @@ class Oauth
 
     /**
      * Normalizes the URL as per https://tools.ietf.org/html/rfc5849#section-3.4.1.2.
+     *
      * @return string
      * @throws \InvalidArgumentException
      */
-    private static function getBaseUriString($uriString) {
+    private static function getBaseUriString($uriString)
+    {
         $uriParts = parse_url($uriString);
         if (!$uriParts) {
             throw new \InvalidArgumentException('URI is not valid!');
@@ -185,9 +198,11 @@ class Oauth
 
     /**
      * Generate a valid signature base string as per https://tools.ietf.org/html/rfc5849#section-3.4.1.
+     *
      * @return string
      */
-    private static function getSignatureBaseString($baseUri, $httpMethod, $oauthParamString) {
+    private static function getSignatureBaseString($baseUri, $httpMethod, $oauthParamString)
+    {
         return strtoupper($httpMethod)                   // Uppercase HTTP method
             . '&' . rawurlencode($baseUri)            // Base URI
             . '&' . urlencode($oauthParamString);  // OAuth parameter string
@@ -197,21 +212,25 @@ class Oauth
      * Signs the signature base string using an RSA private key. The methodology is described at
      * https://tools.ietf.org/html/rfc5849#section-3.4.3 but Mastercard uses the stronger SHA-256 algorithm
      * as a replacement for the described SHA1 which is no longer considered secure.
+     *
      * @return string
      */
-    private static function signSignatureBaseString($baseString, $privateKey) {
+    private static function signSignatureBaseString($baseString, $privateKey)
+    {
         openssl_sign($baseString, $signature, $privateKey, OPENSSL_ALGO_SHA1);
         return base64_encode($signature);
     }
 
     /**
      * Generates a random string for replay protection as per https://tools.ietf.org/html/rfc5849#section-3.3.
+     *
      * @return string
      */
-    private static function getNonce($length = 16) {
-        $characters = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
+    private static function getNonce($length = 16)
+    {
+        $characters       = '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ';
         $charactersLength = strlen($characters);
-        $randomString = '';
+        $randomString     = '';
         for ($i = 0; $i < $length; $i++) {
             $randomString .= $characters[rand(0, $charactersLength - 1)];
         }
@@ -220,9 +239,11 @@ class Oauth
 
     /**
      * Returns UNIX Timestamp as required per https://tools.ietf.org/html/rfc5849#section-3.3.
+     *
      * @return int
      */
-    private static function getTimestamp() {
+    private static function getTimestamp()
+    {
         return time();
     }
 }

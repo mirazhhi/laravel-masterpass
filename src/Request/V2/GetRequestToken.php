@@ -15,16 +15,6 @@ class GetRequestToken extends WalletRequest
     protected $url = 'https://testwallet.masterpass.ru/mpapiv2/GetRequestToken';
 
     /**
-     * @param Client $client
-     * @param $data
-     */
-    public function __construct(Client $client, $data)
-    {
-        parent::__construct($client);
-        $this->prepareData($data);
-    }
-
-    /**
      * @return $this
      */
     public function validate() : GetRequestToken
@@ -37,7 +27,11 @@ class GetRequestToken extends WalletRequest
         return $this;
     }
 
-    public function prepareData(array $data)
+    /**
+     * @param array $data
+     * @return $this
+     */
+    public function prepareData(array $data = [])
     {
         $this->payload['MerchantName'] = $data['merchant_name'];
         $this->payload['Phone']        = $data['phone'];
